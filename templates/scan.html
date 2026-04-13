@@ -20,7 +20,18 @@
       <label>번호판 사진</label>
       <input type="file" name="image" accept="image/*" capture="environment" required>
     </div>
-    <div style="margin-top:14px;"><button type="submit">촬영 후 판정하기</button></div>
+<form action="/api/scan" method="post" enctype="multipart/form-data">
+    
+    <input type="hidden" name="branch_code" value="{{ branch_code }}">
+    
+    <label>사진 촬영</label><br>
+    <input type="file" name="image" accept="image/*" capture="environment" required><br><br>
+    
+    <label>차량번호 (OCR 안되면 직접 입력)</label><br>
+    <input type="text" name="manual_plate"><br><br>
+    
+    <button type="submit">촬영 후 판정하기</button>
+</form>
   </form>
 </div>
 
