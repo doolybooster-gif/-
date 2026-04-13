@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="card">
+  <h3>지사 기준정보 업로드</h3>
+  <p class="muted">CSV 또는 XLSX 파일로 지사 목록을 등록할 수 있습니다.</p>
+
+  <form action="/admin/branches/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".csv,.xlsx,.xlsm" required>
+    <button type="submit">지사 목록 업로드</button>
+    <a href="{{ sample_file }}" style="margin-left:12px;">샘플 파일 다운로드</a>
+  </form>
+</div>
+
+<div class="card">
+  <h3>현재 등록된 지사</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>지사코드</th>
+        <th>지사명</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in branches %}
+      <tr>
+        <td>{{ b.code }}</td>
+        <td>{{ b.name }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
