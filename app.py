@@ -99,17 +99,17 @@ def init_db() -> None:
 init_db()
 
 
-def today_rule_digit_parity(target_date: date) -> int:
-    """짝수일 0, 홀수일 1. 오늘 날짜와 같은 홀짝 차량을 제한한다고 가정."""
+def today_allowed_digit_parity(target_date: date) -> int:
+    """짝수일 0, 홀수일 1. 오늘 날짜와 같은 홀짝 차량이 운행 가능."""
     return target_date.day % 2
-
 
 def is_violation_plate(plate_no: str, target_date: date) -> bool:
     digits = re.findall(r"\d", plate_no)
     if not digits:
         return False
+
     last_digit = int(digits[-1])
-    return last_digit % 2 == today_rule_digit_parity(target_date)
+    return last_digit % 2 != today_allowed_digit_parity(target_date)
 
 
 # Optional OCR support.
