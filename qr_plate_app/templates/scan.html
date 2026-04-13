@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <div class="badge">{{ branch.name }} / {{ branch.code }}</div>
+  <h2 style="margin-bottom:6px;">모바일 번호판 점검</h2>
+  <p class="muted">오늘 제한 차량 홀짝: <strong>{{ restricted_parity }}</strong></p>
+  <form id="scanForm">
+    <input type="hidden" name="branch_code" value="{{ branch.code }}">
+    <div class="row">
+      <div>
+        <label>점검자명</label>
+        <input type="text" name="inspector_name" placeholder="예: 양대리">
+      </div>
+      <div>
+        <label>차량번호 수동보정</label>
+        <input type="text" name="manual_plate" placeholder="OCR 실패 시 입력">
+      </div>
+    </div>
+    <div style="margin-top:12px;">
+      <label>번호판 사진</label>
+      <input type="file" name="image" accept="image/*" capture="environment" required>
+    </div>
+    <div style="margin-top:14px;"><button type="submit">촬영 후 판정하기</button></div>
+  </form>
+</div>
+
+<div class="card" id="resultCard" style="display:none;">
+  <h3>판정 결과</h3>
+  <div id="resultText"></div>
+  <div id="resultMeta" class="muted" style="margin-top:8px;"></div>
+  <div id="violationActions" style="display:none;margin-top:14px;">
+    <form id="violationForm">
+      <input type="hidden" name="scan_id" id="scan_id">
+      <button type="submit">위반차량으로 등록</button>
+      <button type="button" class="button secondary" onclick="hideViolation()">등록 안 함</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const scanForm = document.getElementById('scanForm');
+const resultCard = document.getElementById('resultCard');
+const resultText = document.getElementById('resultText');
+const resultMeta = document.getElementById('resultMeta');
+const violationActions = document.getElementById('violationActions');
+const violationForm = document.getElementById('violationForm');
+const scanIdInput = document.getElementById('scan_id');
+
+scanForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(scanForm);
+  const res = await fetch('/api/scan', { method: 'POST', body: formData });
+  const data = await res.json();
+  resultCard.style.display = 'block';
+  resultText.innerHTML = `<strong>${data.message}</strong>`;
+  resultMeta.innerHTML = `OCR: ${data.ocr_plate || '-'} / 확정 차량번호: ${data.confirmed_plate || '-'} / 등록차량여부: ${data.vehicle_found ? 'Y' : 'N'}`;
+  if (data.is_violation) {
+    violationActions.style.display = 'block';
+    scanIdInput.value = data.scan_id;
+  } else {
+    violationActions.style.display = 'none';
+  }
+});
+
+violationForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append('register', 'true');
+  const scanId = scanIdInput.value;
+  const res = await fetch(`/api/scan/${scanId}/register_violation`, { method: 'POST', body: formData });
+  const data = await res.json();
+  if (data.ok) {
+    resultText.innerHTML += '<div style="margin-top:8px;" class="badge danger">위반차량으로 등록 완료</div>';
+    violationActions.style.display = 'none';
+  }
+});
+
+function hideViolation() {
+  violationActions.style.display = 'none';
+}
+</script>
+{% endblock %}

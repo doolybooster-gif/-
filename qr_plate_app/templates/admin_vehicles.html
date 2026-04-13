@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <h3>차량 기준정보 업로드</h3>
+  <p class="muted">CSV 또는 XLSX 업로드 가능. 예시 파일 형식도 내려받을 수 있다.</p>
+  <div style="margin-bottom:12px;"><a class="button secondary" href="{{ sample_file }}">샘플 CSV 다운로드</a></div>
+  <form action="/admin/vehicles/upload" method="post" enctype="multipart/form-data">
+    <div class="row">
+      <div><input type="file" name="file" accept=".csv,.xlsx,.xlsm" required></div>
+      <div><button type="submit">업로드</button></div>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>차량 기준정보 미리보기</h3>
+  <table>
+    <thead>
+      <tr><th>지사</th><th>차량번호</th><th>성명</th><th>부서</th><th>2부제대상</th><th>예외</th><th>비고</th></tr>
+    </thead>
+    <tbody>
+      {% for v in vehicles %}
+      <tr>
+        <td>{{ v.branch_name or v.branch_code }}</td>
+        <td>{{ v.plate_no }}</td>
+        <td>{{ v.owner_name or '' }}</td>
+        <td>{{ v.department or '' }}</td>
+        <td>{{ 'Y' if v.is_target else 'N' }}</td>
+        <td>{{ 'Y' if v.exempt else 'N' }}</td>
+        <td>{{ v.note or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

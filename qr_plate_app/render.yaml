@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: qr-plate-app
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    disk:
+      name: qr-plate-data
+      mountPath: /app/data
+      sizeGB: 1
