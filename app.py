@@ -392,8 +392,54 @@ async def api_scan(
     target_path.write_bytes(payload)
 
     ocr_plate = run_ocr(payload)
-    confirmed_plate = (manual_plate.strip().upper() or (ocr_plate or "").strip().upper())
+    manual_text = re.sub(r"\s+", "", manual_plate).upper()
 
+    candidate_plates: list[str] = []
+    confirmed_plate = ""
+
+if manual_text:
+    candidates = find_plate_candidates(branch_code, manual_text)
+
+    # 1건이면 자동 확정
+    if len(candidates) == 1:
+        confirmed_plate = candidates[0]["plate_no"]
+
+    # 여러 건이면 후보 선택 필요
+    elif len(candidates) > 1:
+        candidate_plates = [c["plate_no"] for c in candidates]
+
+    # 후보가 없으면, 완전한 번호판 형식일 때만 그대로 사용
+    else:
+        confirmed_plate = manual_text if is_full_plate(manual_text) else ""
+else:
+    confirmed_plate = (ocr_plate or "").strip().upper()
+
+    if candidate_plates:
+    return {
+        "scan_id": None,
+        "ocr_plate": ocr_plate,
+        "confirmed_plate": None,
+        "vehicle_found": False,
+        "vehicle": None,
+        "is_violation": False,
+        "needs_selection": True,
+        "candidates": candidate_plates,
+        "message": "끝 4자리가 일치하는 차량이 여러 대입니다. 차량번호를 선택해 주세요.",
+    }
+
+if manual_text and not confirmed_plate:
+    return {
+        "scan_id": None,
+        "ocr_plate": ocr_plate,
+        "confirmed_plate": None,
+        "vehicle_found": False,
+        "vehicle": None,
+        "is_violation": False,
+        "needs_selection": False,
+        "candidates": [],
+        "message": "입력한 번호와 일치하는 차량을 찾지 못했습니다. 차량번호 전체를 입력하거나 다시 확인해 주세요.",
+    }
+    
     vehicle = None
     if confirmed_plate:
         with closing(get_conn()) as conn:
