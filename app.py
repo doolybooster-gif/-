@@ -185,6 +185,21 @@ def admin_vehicles(request: Request) -> Any:
         {"vehicles": vehicles, "branches": branches, "sample_file": "/sample_vehicle_list.csv"},
     )
 
+@app.get("/admin/branches", response_class=HTMLResponse)
+def admin_branches(request: Request) -> Any:
+    with closing(get_conn()) as conn:
+        branches = conn.execute(
+            "SELECT code, name FROM branches ORDER BY name"
+        ).fetchall()
+
+    return templates.TemplateResponse(
+        request,
+        "admin_branches.html",
+        {
+            "branches": branches,
+            "sample_file": "/sample_branch_list.csv",
+        },
+    )
 
 @app.post("/admin/vehicles/upload")
 async def upload_vehicle_list(file: UploadFile = File(...)) -> RedirectResponse:
@@ -241,6 +256,51 @@ async def upload_vehicle_list(file: UploadFile = File(...)) -> RedirectResponse:
         conn.commit()
     return RedirectResponse(url=f"/admin/vehicles?uploaded={inserted}", status_code=303)
 
+@app.post("/admin/branches/upload")
+async def upload_branch_list(file: UploadFile = File(...)) -> RedirectResponse:
+    suffix = Path(file.filename or "").suffix.lower()
+    raw = await file.read()
+    rows: list[dict[str, Any]] = []
+
+    if suffix == ".csv":
+        decoded = raw.decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(decoded))
+        rows = list(reader)
+    elif suffix in {".xlsx", ".xlsm"}:
+        from openpyxl import load_workbook
+
+        wb = load_workbook(io.BytesIO(raw), data_only=True)
+        ws = wb.active
+        headers = [str(c.value).strip() if c.value is not None else "" for c in ws[1]]
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            item = {headers[i]: row[i] for i in range(len(headers))}
+            rows.append(item)
+    else:
+        raise HTTPException(status_code=400, detail="CSV 또는 XLSX 파일만 업로드할 수 있습니다.")
+
+    inserted = 0
+    with closing(get_conn()) as conn:
+        for row in rows:
+            code = str(row.get("code") or row.get("지사코드") or "").strip().upper()
+            name = str(row.get("name") or row.get("지사명") or "").strip()
+
+            if not code or not name:
+                continue
+
+            conn.execute(
+                """
+                INSERT INTO branches(code, name)
+                VALUES(?, ?)
+                ON CONFLICT(code) DO UPDATE SET
+                    name=excluded.name
+                """,
+                (code, name),
+            )
+            inserted += 1
+
+        conn.commit()
+
+    return RedirectResponse(url=f"/admin/branches?uploaded={inserted}", status_code=303)
 
 @app.get("/sample_vehicle_list.csv")
 def sample_vehicle_list() -> StreamingResponse:
@@ -252,6 +312,20 @@ def sample_vehicle_list() -> StreamingResponse:
     )
     return StreamingResponse(iter([content.encode("utf-8-sig")]), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=sample_vehicle_list.csv"})
 
+@app.get("/sample_branch_list.csv")
+def sample_branch_list() -> StreamingResponse:
+    content = (
+        "code,name\n"
+        "HQ,본부\n"
+        "ICN,인천지사\n"
+        "SWN,수원지사\n"
+        "BSN,부산지사\n"
+    )
+    return StreamingResponse(
+        iter([content.encode("utf-8-sig")]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=sample_branch_list.csv"},
+    )
 
 @app.get("/branch/{branch_code}", response_class=HTMLResponse)
 def branch_scan_page(request: Request, branch_code: str) -> Any:
