@@ -372,7 +372,6 @@ def branch_scan_page(request: Request, branch_code: str) -> Any:
         {"branch": branch, "today": date.today().isoformat(), "allowed_parity": "짝수" if today_allowed_digit_parity(date.today()) == 0 else "홀수"},
     )
 
-
 @app.post("/api/scan")
 async def api_scan(
     branch_code: str = Form(...),
@@ -385,27 +384,27 @@ async def api_scan(
         if not branch:
             raise HTTPException(status_code=404, detail="지사를 찾을 수 없습니다.")
 
-payload = b""
-ocr_plate = None
-file_name = None
-image_path = None
+    payload = b""
+    ocr_plate = None
+    file_name = None
+    image_path = None
 
-if image and image.filename:
-    payload = await image.read()
+    if image and image.filename:
+        payload = await image.read()
 
-    if payload:
-        ext = Path(image.filename or "plate.jpg").suffix or ".jpg"
-        file_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}{ext}"
-        target_path = UPLOAD_DIR / file_name
-        target_path.write_bytes(payload)
+        if payload:
+            ext = Path(image.filename or "plate.jpg").suffix or ".jpg"
+            file_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}{ext}"
+            target_path = UPLOAD_DIR / file_name
+            target_path.write_bytes(payload)
 
-        image_path = f"/static/uploads/{file_name}"
-        ocr_plate = run_ocr(payload)
+            image_path = f"/static/uploads/{file_name}"
+            ocr_plate = run_ocr(payload)
 
-manual_text = re.sub(r"\s+", "", manual_plate).upper()
+    manual_text = re.sub(r"\s+", "", manual_plate).upper()
 
-if not manual_text and not ocr_plate:
-    raise HTTPException(status_code=400, detail="사진 또는 차량번호를 하나 이상 입력해 주세요.")
+    if not manual_text and not ocr_plate:
+        raise HTTPException(status_code=400, detail="사진 또는 차량번호를 하나 이상 입력해 주세요.")
 
     candidate_plates: list[str] = []
     confirmed_plate = ""
@@ -451,13 +450,18 @@ if not manual_text and not ocr_plate:
     vehicle = None
     if confirmed_plate:
         with closing(get_conn()) as conn:
-            vehicle = conn.execute("SELECT * FROM vehicles WHERE plate_no = ?", (confirmed_plate,)).fetchone()
+            vehicle = conn.execute(
+                "SELECT * FROM vehicles WHERE plate_no = ?",
+                (confirmed_plate,),
+            ).fetchone()
 
     scan_date = date.today()
     vehicle_found = 1 if vehicle else 0
     is_target = int(vehicle["is_target"]) if vehicle else 0
     exempt = int(vehicle["exempt"]) if vehicle else 0
-    is_violation = int(bool(vehicle and is_target and not exempt and is_violation_plate(confirmed_plate, scan_date)))
+    is_violation = int(
+        bool(vehicle and is_target and not exempt and is_violation_plate(confirmed_plate, scan_date))
+    )
 
     now = datetime.now().isoformat(timespec="seconds")
     with closing(get_conn()) as conn:
