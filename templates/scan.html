@@ -17,7 +17,9 @@
 
       <div>
         <label>차량번호 수동보정</label>
-        <input type="text" name="manual_plate" placeholder="OCR 실패 시 입력">
+        <label>차량번호 수동보정</label>
+        <input type="text" name="manual_plate" placeholder="차량번호 전체 또는 끝 4자리 입력">
+        <input type="hidden" name="selected_plate" id="selected_plate">
       </div>
     </div>
 
@@ -36,6 +38,7 @@
   <h3>판정 결과</h3>
   <div id="resultText"></div>
   <div id="resultMeta" class="muted" style="margin-top:8px;"></div>
+  <div id="candidateArea" style="margin-top:12px;"></div>
 
   <div id="violationActions" style="display:none;margin-top:14px;">
     <form id="violationForm">
@@ -51,6 +54,7 @@ const scanForm = document.getElementById('scanForm');
 const resultCard = document.getElementById('resultCard');
 const resultText = document.getElementById('resultText');
 const resultMeta = document.getElementById('resultMeta');
+const candidateArea = document.getElementById('candidateArea');
 const violationActions = document.getElementById('violationActions');
 const violationForm = document.getElementById('violationForm');
 const scanIdInput = document.getElementById('scan_id');
@@ -71,25 +75,33 @@ scanForm.addEventListener('submit', async (e) => {
       throw new Error(`판정 요청 실패: ${res.status} ${text}`);
     }
 
-    const data = await res.json();
+   const data = await res.json();
 
-    resultCard.style.display = 'block';
-    resultText.innerHTML = `<strong>${data.message}</strong>`;
-    resultMeta.innerHTML =
-      `OCR: ${data.ocr_plate || '-'} / 확정 차량번호: ${data.confirmed_plate || '-'} / 등록차량여부: ${data.vehicle_found ? 'Y' : 'N'}`;
+resultCard.style.display = 'block';
+candidateArea.innerHTML = '';
 
-    if (data.is_violation) {
-      violationActions.style.display = 'block';
-      scanIdInput.value = data.scan_id;
-    } else {
-      violationActions.style.display = 'none';
-    }
-  } catch (err) {
-    resultCard.style.display = 'block';
-    resultText.innerHTML = `<strong>오류가 발생했습니다.</strong>`;
-    resultMeta.textContent = err.message || String(err);
-    violationActions.style.display = 'none';
-  }
+if (data.needs_selection) {
+  resultText.innerHTML = `<strong>${data.message}</strong>`;
+  resultMeta.innerHTML = '후보 차량번호를 선택한 뒤 다시 판정하기를 눌러주세요.';
+  violationActions.style.display = 'none';
+
+  candidateArea.innerHTML = data.candidates
+    .map(p => `<button type="button" class="button secondary" style="margin-right:8px; margin-bottom:8px;" onclick="selectPlate('${p}')">${p}</button>`)
+    .join('');
+
+  return;
+}
+
+resultText.innerHTML = `<strong>${data.message}</strong>`;
+resultMeta.innerHTML =
+  `OCR: ${data.ocr_plate || '-'} / 확정 차량번호: ${data.confirmed_plate || '-'} / 등록차량여부: ${data.vehicle_found ? 'Y' : 'N'}`;
+
+if (data.is_violation) {
+  violationActions.style.display = 'block';
+  scanIdInput.value = data.scan_id;
+} else {
+  violationActions.style.display = 'none';
+}
 });
 
 violationForm.addEventListener('submit', async (e) => {
