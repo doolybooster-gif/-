@@ -4,7 +4,7 @@
 <div class="card">
   <div class="badge">{{ branch.name }} / {{ branch.code }}</div>
   <h2 style="margin-bottom:6px;">모바일 번호판 점검</h2>
-  <p class="muted">오늘 제한 차량 홀짝: <strong>{{ restricted_parity }}</strong></p>
+  <p class="muted">오늘 운행 가능 차량 홀짝: <strong>{{ allowed_parity }}</strong></p>
 
   <form id="scanForm" enctype="multipart/form-data">
     <input type="hidden" name="branch_code" value="{{ branch.code }}">
