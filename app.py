@@ -142,6 +142,39 @@ def run_ocr(image_bytes: bytes) -> Optional[str]:
     except Exception:
         return None
 
+def is_full_plate(text: str) -> bool:
+    text = re.sub(r"\s+", "", text).upper()
+    return bool(PLATE_PATTERN.fullmatch(text))
+
+
+def find_plate_candidates(branch_code: str, text: str) -> list[sqlite3.Row]:
+    text = re.sub(r"\s+", "", text).upper()
+
+    with closing(get_conn()) as conn:
+        # 1) 완전한 차량번호 형식이면 정확히 일치 검색
+        if is_full_plate(text):
+            row = conn.execute(
+                "SELECT * FROM vehicles WHERE plate_no = ?",
+                (text,),
+            ).fetchone()
+            return [row] if row else []
+
+        # 2) 마지막 4자리만 입력한 경우, 해당 지사 기준 후보 검색
+        if re.fullmatch(r"\d{4}", text):
+            rows = conn.execute(
+                """
+                SELECT *
+                FROM vehicles
+                WHERE branch_code = ?
+                  AND substr(plate_no, -4) = ?
+                ORDER BY plate_no
+                """,
+                (branch_code, text),
+            ).fetchall()
+            return list(rows)
+
+    return []
+
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request) -> Any:
