@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <h3>최근 점검 이력</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>점검일</th><th>지사</th><th>점검자</th><th>OCR</th><th>확정차량번호</th>
+        <th>등록차량</th><th>위반판정</th><th>최종등록</th><th>사진</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in scans %}
+      <tr>
+        <td>{{ s.id }}</td>
+        <td>{{ s.scan_date }}</td>
+        <td>{{ s.branch_name or s.branch_code }}</td>
+        <td>{{ s.inspector_name or '' }}</td>
+        <td>{{ s.ocr_plate or '' }}</td>
+        <td>{{ s.confirmed_plate or '' }}</td>
+        <td>{{ 'Y' if s.vehicle_found else 'N' }}</td>
+        <td>{{ 'Y' if s.is_violation else 'N' }}</td>
+        <td>{{ 'Y' if s.violation_registered else 'N' }}</td>
+        <td>{% if s.image_path %}<a href="{{ s.image_path }}" target="_blank">보기</a>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

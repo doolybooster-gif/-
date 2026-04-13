@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title if title else 'QR 차량 점검 시스템' }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f6f8fb; color: #222; }
+    header { background: #1f4e79; color: white; padding: 16px 20px; }
+    main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+    .card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .stat { font-size: 28px; font-weight: bold; margin-top: 8px; }
+    a.button, button { display: inline-block; padding: 10px 14px; border-radius: 10px; border: 0; background: #1f4e79; color: white; text-decoration: none; cursor: pointer; }
+    .button.secondary { background: #666; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #d9dee6; padding: 8px; font-size: 14px; }
+    th { background: #eef3f8; }
+    input, select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #c9d3df; box-sizing: border-box; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #eef3f8; font-size: 12px; }
+    .ok { background: #d9ead3; }
+    .warn { background: #fce5cd; }
+    .danger { background: #f4cccc; }
+    .muted { color: #666; font-size: 13px; }
+    .nav a { color: white; margin-right: 12px; text-decoration: none; }
+    @media (max-width: 768px) { .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <strong>QR 차량 2부제 점검 시스템</strong>
+      <nav class="nav">
+        <a href="/">홈</a>
+        <a href="/admin/vehicles">차량기준정보</a>
+        <a href="/admin/scans">점검이력</a>
+        <a href="/admin/export">엑셀내보내기</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
