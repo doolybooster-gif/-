@@ -414,7 +414,7 @@ if manual_text:
 else:
     confirmed_plate = (ocr_plate or "").strip().upper()
 
-    if candidate_plates:
+if candidate_plates:
     return {
         "scan_id": None,
         "ocr_plate": ocr_plate,
