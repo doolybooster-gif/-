@@ -378,21 +378,34 @@ async def api_scan(
     branch_code: str = Form(...),
     inspector_name: str = Form(""),
     manual_plate: str = Form(""),
-    image: UploadFile = File(...),
+    image: Optional[UploadFile] = File(None),
 ) -> dict[str, Any]:
     with closing(get_conn()) as conn:
         branch = conn.execute("SELECT * FROM branches WHERE code = ?", (branch_code,)).fetchone()
         if not branch:
             raise HTTPException(status_code=404, detail="지사를 찾을 수 없습니다.")
 
-    payload = await image.read()
-    ext = Path(image.filename or "plate.jpg").suffix or ".jpg"
-    file_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}{ext}"
-    target_path = UPLOAD_DIR / file_name
-    target_path.write_bytes(payload)
+payload = b""
+ocr_plate = None
+file_name = None
+image_path = None
 
-    ocr_plate = run_ocr(payload)
-    manual_text = re.sub(r"\s+", "", manual_plate).upper()
+if image and image.filename:
+    payload = await image.read()
+
+    if payload:
+        ext = Path(image.filename or "plate.jpg").suffix or ".jpg"
+        file_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}{ext}"
+        target_path = UPLOAD_DIR / file_name
+        target_path.write_bytes(payload)
+
+        image_path = f"/static/uploads/{file_name}"
+        ocr_plate = run_ocr(payload)
+
+manual_text = re.sub(r"\s+", "", manual_plate).upper()
+
+if not manual_text and not ocr_plate:
+    raise HTTPException(status_code=400, detail="사진 또는 차량번호를 하나 이상 입력해 주세요.")
 
     candidate_plates: list[str] = []
     confirmed_plate = ""
@@ -459,7 +472,7 @@ async def api_scan(
             (
                 branch_code,
                 inspector_name.strip() or None,
-                f"/static/uploads/{file_name}",
+                image_path,
                 ocr_plate,
                 confirmed_plate or None,
                 vehicle_found,
