@@ -40,7 +40,20 @@ DEFAULT_BRANCHES = [
     ("BSN", "부산지사"),
 ]
 
+def ensure_sample_branch_file() -> None:
+    sample_path = BASE_DIR / "sample_branch_list.csv"
+    if sample_path.exists():
+        return
 
+    content = (
+        "code,name\n"
+        "HQ,본부\n"
+        "ICN,인천지사\n"
+        "SWN,수원지사\n"
+        "BSN,부산지사\n"
+    )
+    sample_path.write_text(content, encoding="utf-8-sig")
+    
 def get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -97,7 +110,7 @@ def init_db() -> None:
 
 
 init_db()
-
+ensure_sample_branch_file()
 
 def today_allowed_digit_parity(target_date: date) -> int:
     """짝수일 0, 홀수일 1. 오늘 날짜와 같은 홀짝 차량이 운행 가능."""
