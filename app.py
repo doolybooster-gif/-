@@ -148,7 +148,7 @@ def home(request: Request) -> Any:
             "scan_count": scan_count,
             "violation_count": violation_count,
             "today": date.today().isoformat(),
-            "restricted_parity": "짝수" if today_rule_digit_parity(date.today()) == 0 else "홀수",
+            "allowed_parity": "짝수" if today_allowed_digit_parity(date.today()) == 0 else "홀수",
         },
     )
 
@@ -249,7 +249,7 @@ def branch_scan_page(request: Request, branch_code: str) -> Any:
     return templates.TemplateResponse(
         request,
         "scan.html",
-        {"branch": branch, "today": date.today().isoformat(), "restricted_parity": "짝수" if today_rule_digit_parity(date.today()) == 0 else "홀수"},
+        {"branch": branch, "today": date.today().isoformat(), "allowed_parity": "짝수" if today_allowed_digit_parity(date.today()) == 0 else "홀수"},
     )
 
 
